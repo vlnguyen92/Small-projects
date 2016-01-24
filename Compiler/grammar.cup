@@ -1,0 +1,224 @@
+import java_cup.runtime.*;
+import java.util.*;
+
+terminal String ID, NUM, DBL, STR;
+terminal PLUS, MINUS, TIMES, DIVIDE;
+terminal LBRACE, RBRACE, LPAREN, RPAREN, LBRACK, RBRACK, MOD, INC, DEC;
+terminal EQ, NE, LT, LE, GT, GE, NOT, AND, OR, COMP;
+terminal SHL, SHR, ASSIGN;
+terminal COMMA, SEMI;
+terminal INT, DOUBLE, IF, ELSE, RETURN, READ, PRINT, WHILE, FOR;
+terminal UNARY;
+
+nonterminal Integer type, m;
+nonterminal TreeNode lval, expr, exprs;
+nonterminal IdEntry dcl, fname, fbeg;
+nonterminal BackpatchNode cexpr;
+nonterminal LinkedList<Integer> stmt, stmts, n;
+nonterminal arg, args, dcls, fargs;
+nonterminal func, glbl, glbls, prog;
+
+precedence right ASSIGN;
+precedence left OR;
+precedence left AND;
+precedence left EQ, NE;
+precedence left LT, LE, GT, GE;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIVIDE, MOD;
+precedence right UNARY, NOT;
+
+prog	::= glbls						{: /*System.out.println("prog -> glbls");*/ :}
+		;
+
+glbls	::= glbls glbl					{: /*System.out.println("glbls -> glbls glbl");*/ :}
+		|								{: /*System.out.println("glbls -> e");*/ :}
+		;
+
+glbl	::= dcl							{: /*System.out.println("glbl -> dcl");*/ :}
+		| func							{: /*System.out.println("glbl -> func");*/ :}
+		;
+		
+m		::= 							{: //System.out.println("m -> e");
+											RESULT = SemanticAction.m(); :}
+		;
+	
+n		::=								{: //System.out.println("n -> e");
+											RESULT = SemanticAction.n(); :}
+		;
+
+dcls	::= dcls dcl					{: /*System.out.println("dcls -> dcls dcl");*/ :}
+		|								{: /*System.out.println("dcls -> e");*/ :}
+		;
+		
+dcl		::= type:t ID:i SEMI			{: /*System.out.println("dcl -> type ID SEMI");*/
+											RESULT = SemanticAction.dcl(i, t); :}
+		;
+
+type	::= INT							{: /*System.out.println("type -> INT");*/
+											RESULT = new Integer(Ops.INT); :}
+		|	DOUBLE						{: /*System.out.println("type -> DOUBLE");*/
+											RESULT = new Integer(Ops.DOUBLE); :}
+		;
+
+func	::= fbeg:f stmts:s m:m1 RBRACE	{: /*System.out.println("func -> fbeg stmts m }");*/
+											SemanticAction.func(f, s, m1); :}
+		;
+
+fbeg	::= fname:f fargs LBRACE dcls	{: //System.out.println("fbeg -> fname fargs { dcls");
+											RESULT = SemanticAction.fbeg(f); :}
+		;
+
+fname	::= type:t ID:f					{: //System.out.println("fname -> type ID");
+											RESULT = SemanticAction.fname(f, t); :}
+		|	ID:f						{: //System.out.println("fname -> ID");
+											RESULT = SemanticAction.fname(f, new Integer(Ops.INT)); :}
+		;
+		
+fargs	::= LPAREN args RPAREN			{: /*System.out.println("fargs -> ( args )");*/ :}
+		|	LPAREN RPAREN				{: /*System.out.println("fargs -> ( )");*/ :}
+		;
+
+args	::= args COMMA arg				{: /*System.out.println("args -> args , arg");*/ :}
+		|	arg							{: /*System.out.println("args -> arg");*/ :}
+		;
+
+arg		::= type:t ID:i					{: //System.out.println("arg -> type ID");
+											SemanticAction.arg(i, t); :}
+		;
+
+stmts	::= stmts:s1 m:m1 stmt:s2		{: /*System.out.println("stmts -> stmts m stmt");*/
+											RESULT = SemanticAction.stmts(s1, m1, s2); :}
+		|								{: /*System.out.println("stmts -> e");*/
+											RESULT = new LinkedList<Integer>(); :}
+		;
+
+stmt	::= expr:e SEMI
+				{: //System.out.println("stmt -> expr ;");
+					Utility.print_tree(e);
+					RESULT = new LinkedList<Integer>(); :}
+		|	RETURN SEMI
+				{: //System.out.println("stmt -> RETURN ;");
+					RESULT = SemanticAction.ret(new TreeNode(0)); :}
+		|	RETURN expr:e SEMI
+				{: //System.out.println("stmt -> RETURN expr ;");
+					RESULT = SemanticAction.ret(e); :}
+		|	LBRACE stmts:s RBRACE
+				{: /*System.out.println("stmt -> { stmts }");*/
+					RESULT = s; :}
+		|	IF LPAREN cexpr:c RPAREN m:m1 stmt:s
+				{: /*System.out.println("stmt -> IF ( cexpr ) m stmt");*/
+					RESULT = SemanticAction.if_stmt(c, m1, s); :}
+		|	IF LPAREN cexpr:c RPAREN m:m1 stmt:s1 n:n1 ELSE m:m2 stmt:s2
+				{: /*System.out.println("stmt -> IF ( cexpr ) m stmt n ELSE m stmt");*/
+					RESULT = SemanticAction.if_else_stmt(c, m1, s1, n1, m2, s2); :}
+		|	WHILE LPAREN m:m1 cexpr:c RPAREN m:m2 stmt:s1 n:n1
+				{: /*System.out.println("stmt -> WHILE ( m cexpr ) m stmt n");*/
+					RESULT = SemanticAction.while_stmt(m1, c, m2, s1, n1); :}
+		|	FOR LPAREN expr:e1 {: Utility.print_tree(e1); :} SEMI m:m1 cexpr:c SEMI
+					expr:e2 RPAREN m:m3 stmt:s m:m2 {: Utility.print_tree(e2); :} n:n2
+				{: //System.out.println("stmt -> FOR ( expr ; cexpr ; expr) stmt");
+					RESULT = SemanticAction.for_stmt(m1, c, m2, m3, s, n2); :}
+		|	SEMI
+				{: /*System.out.println("stmt -> ;");*/
+					RESULT = new LinkedList<Integer>(); :}
+		|	READ lval:v SEMI
+				{: //System.out.println("stmt -> READ lval ;");
+				SemanticAction.read(v);
+					RESULT = new LinkedList<Integer>(); :}
+		|	PRINT lval:v SEMI
+				{: //System.out.println("stmt -> PRINT lval ;");
+				SemanticAction.print(v);
+					RESULT = new LinkedList<Integer>(); :}
+		;
+
+cexpr	::= expr:e1 EQ expr:e2
+				{: /*System.out.println("cexpr -> expr == expr");*/
+					RESULT = SemanticAction.rel_op(Ops.CMPEQ, e1, e2); :}
+		|	expr:e1 NE expr:e2
+				{: /*System.out.println("cexpr -> expr != expr");*/
+					RESULT = SemanticAction.rel_op(Ops.CMPNE, e1, e2); :}
+		|	expr:e1 LT expr:e2
+				{: //System.out.println("cexpr -> expr < expr");
+					RESULT = SemanticAction.rel_op(Ops.CMPLT, e1, e2); :}
+		|	expr:e1 LE expr:e2
+				{: /*System.out.println("cexpr -> expr <= expr");*/
+					RESULT = SemanticAction.rel_op(Ops.CMPLE, e1, e2); :}
+		|	expr:e1 GT expr:e2
+				{: /*System.out.println("cexpr -> expr > expr");*/
+					RESULT = SemanticAction.rel_op(Ops.CMPGT, e1, e2); :}
+		|	expr:e1 GE expr:e2
+				{: /*System.out.println("cexpr -> expr >= expr");*/
+					RESULT = SemanticAction.rel_op(Ops.CMPGE, e1, e2); :}
+		|	NOT cexpr:c
+				{: /*System.out.println("cexpr -> ! cexpr");*/
+					RESULT = SemanticAction.not_op(c); :}
+		|	cexpr:c1 AND m:m1 cexpr:c2
+				{: /*System.out.println("cexpr -> cexpr && m cexpr");*/
+					RESULT = SemanticAction.and_op(c1, m1, c2); :}
+		|	cexpr:c1 OR m:m1 cexpr:c2
+				{: /*System.out.println("cexpr -> cexpr || m cexpr");*/
+					RESULT = SemanticAction.or_op(c1, m1, c2); :}
+		|	LPAREN cexpr:c RPAREN
+				{: /*System.out.println("cexpr -> ( cexpr )");*/ 
+					RESULT = c; :}
+		|	expr:e
+				{: //System.out.println("cexpr -> expr");
+					RESULT = SemanticAction.expr_to_cexpr(e); :}
+		;
+
+exprs	::= exprs:e1 COMMA expr:e2
+				{: //System.out.println("exprs -> exprs , expr");
+					RESULT = new TreeNode(Ops.APARAM, Ops.INT, e2, e1); :}
+		|	expr:e
+				{: //System.out.println("exprs -> expr");
+					RESULT = new TreeNode(Ops.APARAM, Ops.INT, e, new TreeNode()); :}
+		;
+
+expr	::= lval:v ASSIGN expr:e
+				{: //System.out.println("expr -> lval = expr");
+				RESULT = SemanticAction.assign(v, e); :}
+		|	expr:e1 PLUS expr:e2
+				{: //System.out.println("expr -> expr + expr");
+				RESULT = SemanticAction.arith(Ops.PLUS, e1, e2); :}
+		|	expr:e1 MINUS expr:e2
+				{: //System.out.println("expr -> expr - expr");
+				RESULT = SemanticAction.arith(Ops.MINUS, e1, e2); :}
+		|	expr:e1 TIMES expr:e2
+				{: //System.out.println("expr -> expr * expr");
+				RESULT = SemanticAction.arith(Ops.TIMES, e1, e2); :}
+		|	expr:e1 DIVIDE expr:e2
+				{: //System.out.println("expr -> expr / expr");
+				RESULT = SemanticAction.arith(Ops.DIVIDE, e1, e2); :}
+		|	expr:e1 MOD expr:e2
+				{: //System.out.println("expr -> expr % expr");
+				RESULT = SemanticAction.mod(e1, e2); :}
+		|	MINUS expr:e
+				{: //System.out.println("expr -> - expr");
+				RESULT = SemanticAction.negate(e); :}		%prec UNARY
+		|	LPAREN expr:e RPAREN
+				{: //System.out.println("expr -> ( expr )");
+				RESULT = e; :}
+		|	lval:v
+				{: //System.out.println("expr -> lval");
+				RESULT = SemanticAction.deref(v); :}
+		|	ID:s LPAREN RPAREN
+				{: //System.out.println("expr -> ID ( )");
+					RESULT = SemanticAction.call(s, null); :}
+		|	ID:s LPAREN exprs:e RPAREN
+				{: //System.out.println("expr -> ID ( exprs )");
+					RESULT = SemanticAction.call(s, e); :}
+		|	NUM:n
+				{: /*System.out.println("expr -> NUM");*/
+				RESULT = new TreeNode(Integer.parseInt(n));	:}
+		|	DBL:d
+				{: /*System.out.println("expr -> DBL");*/
+				RESULT = new TreeNode(Double.parseDouble(d));	:}
+		|	STR:s
+				{: //System.out.println("expr -> STR");
+					RESULT = new TreeNode(s); :}
+		;
+
+lval	::= ID:i
+				{: //System.out.println("lval -> ID (value = " + i + ")");
+					RESULT = SemanticAction.id(i); :}
+		;

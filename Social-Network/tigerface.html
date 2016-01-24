@@ -1,0 +1,165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd"
+    >
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="tigerfacestyles.css"/>
+    <title>tigerface</title>
+    
+</head>
+<body>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js">
+    </script>
+    <script>
+        function validate(){
+            var login = document.getElementById("login1").value;
+            var pswd = document.getElementById("pswd0").value;
+            if(login == ""){
+                alert("Please enter your username");
+                return false;
+            }
+            if(pswd == ""){
+                alert("Please enter your password");
+                return false;
+            }
+  /*          var valid = $.ajax({
+                    type: "GET",
+                    url: "verify_pswd.php?login=" + login + "&pswd=" + pswd,
+                    async: false
+                }).responseText;
+            if(valid == "true"){
+                alert("That is the incorrect username or password");
+                return false;
+            }*/
+
+//Cannot get the above validation to work. It wont allow me to login even if I have the correct uname an pswd
+            return true;
+        }
+        function validate_su(){
+            var fname = document.getElementById("fname").value;
+            var lname = document.getElementById("lname").value;
+            var uname = document.getElementById("uname_n").value;
+            var pswd2 = document.getElementById("pswd2").value;
+            var pswd3 = document.getElementById("pswd3").value;
+            if(fname == ""){
+                alert("Please enter you first name");
+                return false;
+            }
+            if(lname == ""){
+                alert("Please enter your last name");
+                return false;
+            }
+            if(uname == ""){
+                alert("Please enter your username");
+                return false;
+            }
+            if(pswd2 == ""){
+                alert("Please enter your password");
+                return false;
+            }
+            if(pswd3 == ""){
+                alert("Please verify your password");
+                return false;
+            }
+            if(pswd3 != pswd2){
+                alert("Please verify with the same password");
+                return false;
+            }
+            var in_use = $.ajax({
+                    type: "GET",
+                    url: "validate_uname.php?uname=" + uname,
+                    async: false
+                }).responseText;
+            if(in_use == "true"){
+                alert(uname + " is already in use. Please select another username");
+                return false;
+            }
+            return true;
+        }
+    </script>
+    
+    <h1 id="h1" class="headers">
+        <table>
+            <tr>
+                <td><img src="angry.png"></td>
+                <td id="login" width="70%" align="center">
+                    <form method="post" action="tigerface.php" align="left" onsubmit="return validate()">
+                        <table>
+                            <tr>
+                                <td><font size="4px" color="white">UserName:</font><br/></td>
+                                <td><font size="4px" color="white">Password:</font><br/></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" id="login1" name="uname"></td>
+                                <td><input type="password" id="pswd0" name="pswd">
+                                    <input type="submit" value="Login">
+                                    <input type="reset"></td>
+                            </tr>
+                        </table>
+                    </form></td>
+            </tr>
+        </table>
+    </h1>
+    <hr/ color = "black">
+    <table class="table">
+        <tr>
+            <td><img src="tiger.jpg" id="tiger"></td>
+            <td width="45%">
+                <font size="7px" color="black">NOT SIGNED UP?</font><br/>
+                <font size="4px" color="black">CREATE AN ACCOUNT HERE!</font><br/>
+                <form method="post" action="create_acct.php" onsubmit="return validate_su()">
+                    First Name:
+                    <input type="text" id="fname" name="fname"><br/>
+                    Last Name:
+                    <input type="text" id="lname" name="lname"><br/>
+                    User Name:
+                    <input type="text" id="uname_n" name="uname"><br/>
+                    Password:
+                    <input type="password" id="pswd2" name="pswd"><br/>
+                    Re-enter Password:
+                    <input type="password" id="pswd3"></br>
+                    Sex:
+                    <input type="radio" value="M" name="sex" checked="checked">Male
+                    <input type="radio" value="F" name="sex">Female<br/>
+                    Birthday:
+                    <select name="month">
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08">August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <select name="day">
+                    <?php
+                    
+                    for ($i = 1; $i < 31; $i++)
+                            echo "<option value='$i'>$i</option>";
+                    
+                    echo "</select><select name='year'>";
+                    for ($i = 2013; $i >= 1900; $i--)
+                            echo "<option value='$i'>$i</option>";
+                    
+                    ?>
+                    </select><br/>
+                    Profile Pic:
+                    <input type="text" name="pic"><br/>
+                    <input type="submit" value="Create Account">
+                    <input type="reset"> 
+                </form>
+                <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+            </td>
+        </tr>
+    </table>
+    <script>
+        $("username").focus();
+    </script>
+</body>
+    
+</html>

@@ -1,0 +1,2 @@
+select tab0.id, tab1.f1 from tab0 join tab1 on tab0.id > 90 and tab1.f1 < 0.0 into outfile '/tmp/q1.txt';
+select tab1.id, tab0.f1, tab0.f2 from tab0 join tab1 on tab0.id > 95 and tab1.f1 < 0.0 or tab0.f2 > 120.5 into outfile '/tmp/q2.txt';

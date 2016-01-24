@@ -1,0 +1,53 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd"
+    >
+<html lang="en">
+<head>
+    <title>Create Group</title>
+</head>
+<body>
+    <script>
+        function $(id){
+            return document.getElementById(id);
+        }
+        function validate(){
+            if($("gname").value == ""){
+                alert("Please enter a group name");
+                return false;
+            }
+            return true;
+        }
+    </script>
+    <link rel='stylesheet' type='text/css' href='tigerfacestyles.css'/>
+    <h1 id='h1' class='headers'>
+        <table>
+            <tr>
+                <td id='h1'><img src='angry.png'></td>
+                <td width='70%' align='right'>
+                    <table>
+                        <tr>
+                            <td>
+                                <form method='post' action='tigerface.php'>
+                                    <input type='submit' value='Home'>
+                                </form></td>
+                            <td>
+                                <form method='post' action='logout.php'>
+                                    <input type='submit' value='Logout'>
+                                </form></td>
+                            <td>
+                                <form method='post' action='edit.php'>
+                                    <input type='submit' value='Edit Profile'>
+                                </form></td>
+                            <td>
+                                <form method='post' action='delete_user.php' onsubmit="return confirm('Are you sure you want to remove your profile?')">
+                                    <input type='submit' value='Delete Profile'>
+                                </form></td></tr></table>
+            </tr>
+        </table></h1>
+    <h2>Name Your Group</h2>
+    <form method="post" action="create_group.php" name="g_name" onsubmit="return validate()">
+        <input id="gname" type="text" name="g_name">
+        <input type="submit" value="Create Group">
+    </form>
+</body>
+</html>
